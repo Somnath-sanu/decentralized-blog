@@ -10,17 +10,23 @@ import { useAnchorProvider } from '../solana/solana-provider'
 import { useTransactionToast } from '../use-transaction-toast'
 import { toast } from 'sonner'
 
+interface CreateEntryArgs {
+  title: string
+  message: string
+  owner: PublicKey
+}
+
 export function useCounterProgram() {
   const { connection } = useConnection()
   const { cluster } = useCluster()
   const transactionToast = useTransactionToast()
   const provider = useAnchorProvider()
-  const programId = useMemo(() => getCounterProgramId(cluster.network as Cluster), [cluster])
+  const programId = useMemo(() => getCounterProgramId('devnet'), [cluster])
   const program = useMemo(() => getCounterProgram(provider, programId), [provider, programId])
 
   const accounts = useQuery({
     queryKey: ['counter', 'all', { cluster }],
-    queryFn: () => program.account.counter.all(),
+    queryFn: () => program.account.blogEntryState.all(),
   })
 
   const getProgramAccount = useQuery({
@@ -28,16 +34,39 @@ export function useCounterProgram() {
     queryFn: () => connection.getParsedAccountInfo(programId),
   })
 
-  const initialize = useMutation({
-    mutationKey: ['counter', 'initialize', { cluster }],
-    mutationFn: (keypair: Keypair) =>
-      program.methods.initialize().accounts({ counter: keypair.publicKey }).signers([keypair]).rpc(),
-    onSuccess: async (signature) => {
-      transactionToast(signature)
-      await accounts.refetch()
+  const createEntry = useMutation<string, Error, CreateEntryArgs>({
+    mutationKey: [`blogEntry`, `create`, { cluster }],
+    mutationFn: async ({ title, message, owner }) => {
+      return program.methods.createBlogEntry(title, message).rpc()
+
+      /**
+       * program.methods.createBlogEntry(title, message).rpc() 
+       * 
+       * IS SAME AS
+       * 
+       * await program.methods.createBlogEntry(title, message)
+       * .accounts({
+        blogEntry: PublicKey.findProgramAddressSync(
+          [Buffer.from(title), provider.wallet.publicKey.toBuffer()],
+          program.programId
+        )[0],
+
+        owner: provider.wallet.publicKey,
+
+        systemProgram: SystemProgram.programId,
+
+        }).signers([]) // wallet signs via the provider
+        
+        .rpc();
+
+       */
     },
-    onError: () => {
-      toast.error('Failed to initialize account')
+    onSuccess(signatute) {
+      transactionToast(signatute)
+      accounts.refetch()
+    },
+    onError(error) {
+      toast.error(`Error creating entry : ${error.message}`)
     },
   })
 
@@ -46,7 +75,7 @@ export function useCounterProgram() {
     programId,
     accounts,
     getProgramAccount,
-    initialize,
+    createEntry,
   }
 }
 
@@ -57,50 +86,40 @@ export function useCounterProgramAccount({ account }: { account: PublicKey }) {
 
   const accountQuery = useQuery({
     queryKey: ['counter', 'fetch', { cluster, account }],
-    queryFn: () => program.account.counter.fetch(account),
+    queryFn: () => program.account.blogEntryState.fetch(account),
   })
 
-  const closeMutation = useMutation({
-    mutationKey: ['counter', 'close', { cluster, account }],
-    mutationFn: () => program.methods.close().accounts({ counter: account }).rpc(),
-    onSuccess: async (tx) => {
-      transactionToast(tx)
-      await accounts.refetch()
+  const updateEntry = useMutation<string, Error, CreateEntryArgs>({
+    mutationKey: ['blogEntry', 'update', { cluster }],
+    mutationFn: async ({ title, message }) => {
+      return await program.methods.updateBlogEntry(title, message).rpc()
+    },
+    onSuccess(signatute) {
+      transactionToast(signatute)
+      accounts.refetch()
+    },
+    onError(error) {
+      toast.error(`Error updating entry : ${error.message}`)
     },
   })
 
-  const decrementMutation = useMutation({
-    mutationKey: ['counter', 'decrement', { cluster, account }],
-    mutationFn: () => program.methods.decrement().accounts({ counter: account }).rpc(),
-    onSuccess: async (tx) => {
-      transactionToast(tx)
-      await accountQuery.refetch()
+  const deleteEntry = useMutation({
+    mutationKey: ['blogEntry', 'delete', { cluster }],
+    mutationFn: async (title: string) => {
+      return await program.methods.deleteBlogEntry(title).rpc()
     },
-  })
-
-  const incrementMutation = useMutation({
-    mutationKey: ['counter', 'increment', { cluster, account }],
-    mutationFn: () => program.methods.increment().accounts({ counter: account }).rpc(),
-    onSuccess: async (tx) => {
-      transactionToast(tx)
-      await accountQuery.refetch()
+    onSuccess(signatute) {
+      transactionToast(signatute)
+      accounts.refetch()
     },
-  })
-
-  const setMutation = useMutation({
-    mutationKey: ['counter', 'set', { cluster, account }],
-    mutationFn: (value: number) => program.methods.set(value).accounts({ counter: account }).rpc(),
-    onSuccess: async (tx) => {
-      transactionToast(tx)
-      await accountQuery.refetch()
+    onError(error) {
+      toast.error(`Error deleting entry : ${error.message}`)
     },
   })
 
   return {
     accountQuery,
-    closeMutation,
-    decrementMutation,
-    incrementMutation,
-    setMutation,
+    updateEntry,
+    deleteEntry,
   }
 }

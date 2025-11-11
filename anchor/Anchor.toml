@@ -1,12 +1,13 @@
 [toolchain]
 package_manager = "yarn"
+anchor_version = "0.31.1"
 
 [features]
 resolution = true
 skip-lint = false
 
 [programs.localnet]
-counter = "Count3AcZucFDPSFBAeHkQ6AvttieKUkyJ8HiQGhQwe"
+counter = "7VnZZbZcQiaKeAYf3KGFDMTpbG5dyHHVhhXCSj9GNGGH"
 
 [registry]
 url = "https://api.apr.dev"

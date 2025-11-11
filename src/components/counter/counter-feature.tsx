@@ -29,7 +29,7 @@ export default function CounterFeature() {
     </div>
   ) : (
     <div className="max-w-4xl mx-auto">
-      <div className="hero py-[64px]">
+      <div className="hero py-16">
         <div className="hero-content text-center">
           <WalletButton />
         </div>

@@ -13,7 +13,7 @@ export default function AccountListFeature() {
   }
 
   return (
-    <div className="hero py-[64px]">
+    <div className="hero py-16">
       <div className="hero-content text-center">
         <WalletButton />
       </div>
