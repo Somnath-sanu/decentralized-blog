@@ -1,5 +1,7 @@
 'use client'
 
+import { useWallet } from '@solana/wallet-adapter-react'
+
 /**
  * Client-side Pinata utilities for uploading blog content and images
  */
@@ -23,9 +25,10 @@ export interface BlogContent {
 /**
  * Upload a file (image) to Pinata
  */
-export async function uploadFileToPinata(file: File): Promise<string> {
+export async function uploadFileToPinata(file: File , pubKey: string): Promise<string> {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('publicKey' , pubKey)
 
   const response = await fetch('/api/pinata/upload', {
     method: 'POST',
@@ -44,13 +47,16 @@ export async function uploadFileToPinata(file: File): Promise<string> {
 /**
  * Upload blog content (body + images) to Pinata as JSON
  */
-export async function uploadBlogContentToPinata(content: BlogContent): Promise<string> {
+export async function uploadBlogContentToPinata(content: BlogContent, pubKey: string): Promise<string> {
   const response = await fetch('/api/pinata/upload-json', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(content),
+    body: JSON.stringify({
+      content,
+      publicKey: pubKey,
+    }),
   })
 
   if (!response.ok) {
@@ -67,12 +73,12 @@ export async function uploadBlogContentToPinata(content: BlogContent): Promise<s
  */
 export async function fetchFromIPFS(ipfsHash: string): Promise<BlogContent> {
   // Support both custom gateway and default Pinata gateway
-  const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL 
+  const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL
     ? process.env.NEXT_PUBLIC_GATEWAY_URL.startsWith('http')
       ? process.env.NEXT_PUBLIC_GATEWAY_URL
       : `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`
     : 'https://gateway.pinata.cloud'
-  
+
   const url = `${gatewayUrl}/ipfs/${ipfsHash}`
 
   const response = await fetch(url)
@@ -82,4 +88,3 @@ export async function fetchFromIPFS(ipfsHash: string): Promise<BlogContent> {
 
   return response.json()
 }
-

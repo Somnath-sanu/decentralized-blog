@@ -3,12 +3,14 @@ import { pinata } from '@/lib/pinata'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const {content , publicKey } = await request.json()
 
     // Upload JSON using Pinata SDK v2 with metadata
+    // Use keyvalues to store publicKey instead of group (group requires UUID)
     const result = await pinata.upload.public
-      .json(body)
+      .json(content)
       .name('blog-content')
+      .keyvalues({ publicKey: publicKey || 'unknown' })
 
     // Return response in format expected by client (with IpfsHash for backward compatibility)
     return NextResponse.json({

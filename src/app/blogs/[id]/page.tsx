@@ -39,7 +39,7 @@ export default function BlogDetailPage() {
     return (
       <div className="text-center py-16">
         <h2 className="text-2xl font-bold text-purple-200 mb-4">Blog Not Found</h2>
-        <p className="text-gray-400 mb-6">The blog you're looking for doesn't exist.</p>
+        <p className="text-gray-400 mb-6">The blog you&apos;re looking for doesn&apos;t exist.</p>
         <Link href="/blogs">
           <Button variant="outline">Back to Blogs</Button>
         </Link>

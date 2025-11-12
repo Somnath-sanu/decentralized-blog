@@ -5,13 +5,15 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const publicKey = formData.get('publicKey') as string
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
     // Upload file using Pinata SDK v2
-    const result = await pinata.upload.public.file(file)
+    // Use keyvalues to store publicKey instead of group (group requires UUID)
+    const result = await pinata.upload.public.file(file).keyvalues({ publicKey: publicKey || 'unknown' })
 
     // Return response in format expected by client (with IpfsHash for backward compatibility)
     return NextResponse.json({
@@ -26,10 +28,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Pinata upload error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Upload failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Upload failed' }, { status: 500 })
   }
 }
-

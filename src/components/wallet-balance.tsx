@@ -7,8 +7,6 @@ import { Wallet } from 'lucide-react'
 
 export function WalletBalance() {
   const { publicKey } = useWallet()
-  
-  if (!publicKey) return null
 
   const { data: balance } = useGetBalance({ address: publicKey })
   const solBalance = balance ? (balance / LAMPORTS_PER_SOL).toFixed(4) : '0.0000'

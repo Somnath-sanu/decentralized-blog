@@ -13,15 +13,14 @@ import {
 } from '@solana/web3.js'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-export function useGetBalance({ address }: { address: PublicKey }) {
+export function useGetBalance({ address }: { address: PublicKey | null }) {
   const { connection } = useConnection()
-  // const connection = new Connection("") // helius endpoint url
-
-
+  // const connection = new Connection("") //TODO:  helius endpoint url 
 
   return useQuery({
     queryKey: ['get-balance', { endpoint: connection.rpcEndpoint, address }],
-    queryFn: () => connection.getBalance(address),
+    queryFn: () => address && connection.getBalance(address),
+    enabled: !!address,
   })
 }
 

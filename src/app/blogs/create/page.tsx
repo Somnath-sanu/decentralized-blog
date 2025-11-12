@@ -36,31 +36,38 @@ export default function CreateBlogPage() {
     },
   })
 
-  const handleImageUpload = useCallback(async (file: File) => {
-    try {
-      setUploading(true)
-      const ipfsHash = await uploadFileToPinata(file)
-      setUploadedImages((prev) => [...prev, ipfsHash])
-      
-      // Insert image into editor
-      if (editor) {
-        // Support both custom gateway and default Pinata gateway
-        const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL 
-          ? process.env.NEXT_PUBLIC_GATEWAY_URL.startsWith('http')
-            ? process.env.NEXT_PUBLIC_GATEWAY_URL
-            : `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`
-          : 'https://gateway.pinata.cloud'
-        const imageUrl = `${gatewayUrl}/ipfs/${ipfsHash}`
-        editor.chain().focus().setImage({ src: imageUrl }).run()
+  const handleImageUpload = useCallback(
+    async (file: File) => {
+      if (!publicKey) {
+        return
       }
-      
-      toast.success('Image uploaded successfully!')
-    } catch (error) {
-      toast.error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setUploading(false)
-    }
-  }, [editor])
+
+      try {
+        setUploading(true)
+        const ipfsHash = await uploadFileToPinata(file, publicKey.toBase58())
+        setUploadedImages((prev) => [...prev, ipfsHash])
+
+        // Insert image into editor
+        if (editor) {
+          // Support both custom gateway and default Pinata gateway
+          const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL
+            ? process.env.NEXT_PUBLIC_GATEWAY_URL.startsWith('http')
+              ? process.env.NEXT_PUBLIC_GATEWAY_URL
+              : `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`
+            : 'https://gateway.pinata.cloud'
+          const imageUrl = `${gatewayUrl}/ipfs/${ipfsHash}`
+          editor.chain().focus().setImage({ src: imageUrl }).run()
+        }
+
+        toast.success('Image uploaded successfully!')
+      } catch (error) {
+        toast.error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      } finally {
+        setUploading(false)
+      }
+    },
+    [editor],
+  )
 
   const handleSubmit = async () => {
     if (!publicKey) {
@@ -87,7 +94,7 @@ export default function CreateBlogPage() {
         images: uploadedImages,
       }
 
-      const ipfsHash = await uploadBlogContentToPinata(blogContent)
+      const ipfsHash = await uploadBlogContentToPinata(blogContent, publicKey.toBase58())
       toast.success('Blog content uploaded to IPFS!')
 
       // Convert SOL to lamports
@@ -101,7 +108,7 @@ export default function CreateBlogPage() {
       })
 
       toast.success('Blog created successfully!')
-      
+
       // Reset form
       setTitle('')
       editor.commands.clearContent()
@@ -114,11 +121,11 @@ export default function CreateBlogPage() {
     }
   }
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileClick = () => {
     if (fileInputRef.current) {
-      fileInputRef.current.click();
+      fileInputRef.current.click()
     }
   }
 
@@ -136,11 +143,7 @@ export default function CreateBlogPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center"
-      >
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
           Create Blog
         </h1>
@@ -153,7 +156,9 @@ export default function CreateBlogPage() {
         className="bg-white/5 backdrop-blur-xl rounded-xl border border-purple-500/20 p-8 space-y-6"
       >
         <div className="space-y-2">
-          <Label htmlFor="title" className="text-purple-200">Title</Label>
+          <Label htmlFor="title" className="text-purple-200">
+            Title
+          </Label>
           <Input
             id="title"
             value={title}
@@ -198,9 +203,7 @@ export default function CreateBlogPage() {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-purple-200">
-              SOL Contribution to Pool: {solContribution[0].toFixed(2)} SOL
-            </Label>
+            <Label className="text-purple-200">SOL Contribution to Pool: {solContribution[0].toFixed(2)} SOL</Label>
             <Slider
               value={solContribution}
               onValueChange={setSolContribution}
@@ -224,4 +227,3 @@ export default function CreateBlogPage() {
     </div>
   )
 }
-
