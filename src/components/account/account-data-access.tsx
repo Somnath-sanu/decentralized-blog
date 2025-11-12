@@ -15,6 +15,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 export function useGetBalance({ address }: { address: PublicKey }) {
   const { connection } = useConnection()
+  // const connection = new Connection("") // helius endpoint url
+
+
 
   return useQuery({
     queryKey: ['get-balance', { endpoint: connection.rpcEndpoint, address }],
