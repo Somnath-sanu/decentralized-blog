@@ -2,72 +2,164 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { FileText, PlusCircle, Gift, User } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Home, PlusCircle, Gift, User, RefreshCw, TrendingUp, UserIcon } from 'lucide-react'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useGetBalance } from './account/account-data-access'
+import { LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { ellipsify } from '@/lib/utils'
+import { useCluster } from './cluster/cluster-data-access'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuBadge,
+  SidebarFooter,
+  useSidebar,
+} from '@/components/ui/sidebar'
+import { Badge } from './ui/badge'
 
 const navItems = [
-  { label: 'All Blogs', path: '/blogs', icon: FileText },
+  { label: 'Home', path: '/blogs', icon: Home },
   { label: 'Create Blog', path: '/blogs/create', icon: PlusCircle },
-  { label: 'Lucky Wheel', path: '/lucky-wheel', icon: Gift },
-  { label: 'Account', path: '/account', icon: User },
 ]
+
+const additionalItems = [{ label: 'Lucky Wheel', path: '/lucky-wheel', icon: RefreshCw, badge: 'Weekly' }]
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { publicKey } = useWallet()
+  const { data: balance } = useGetBalance({ address: publicKey })
+  const { cluster } = useCluster()
+  const solBalance = balance ? (balance / LAMPORTS_PER_SOL).toFixed(2) : '0.00'
+  const { open } = useSidebar()
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-purple-900/20 via-purple-800/10 to-blue-900/20 backdrop-blur-xl border-r border-purple-500/20 z-40 hidden md:block">
-      <div className="flex flex-col h-full p-6">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            Decentralized Blog
-          </Link>
-        </motion.div>
-
-        <nav className="flex-1 space-y-2">
-          {navItems.map((item, index) => {
-            const Icon = item.icon
-            const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))
-            
-            return (
-              <motion.div
-                key={item.path}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Link
-                  href={item.path}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
-                    'hover:bg-purple-500/20 hover:border-purple-400/50',
-                    isActive
-                      ? 'bg-gradient-to-r from-purple-500/30 to-blue-500/30 border border-purple-400/50 shadow-lg shadow-purple-500/20'
-                      : 'border border-transparent'
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem className="mt-4 ">
+            <SidebarMenuButton className="hover:bg-muted">
+              <Link href="/" className="flex items-center gap-2 px-2 py-4">
+                <h1 className="text-2xl font-bold font-serif">Solggy</h1>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        {/* Network Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Network</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="hover:bg-muted">
+                  {open && (
+                    <Badge className="">
+                      {cluster.network === 'devnet'
+                        ? 'Devnet'
+                        : cluster.network === 'mainnet-beta'
+                          ? 'Mainnet'
+                          : cluster.name}
+                    </Badge>
                   )}
-                >
-                  <Icon className={cn(
-                    'w-5 h-5',
-                    isActive ? 'text-purple-300' : 'text-gray-400'
-                  )} />
-                  <span className={cn(
-                    'font-medium',
-                    isActive ? 'text-purple-200' : 'text-gray-300'
-                  )}>
-                    {item.label}
-                  </span>
-                </Link>
-              </motion.div>
-            )
-          })}
-        </nav>
-      </div>
-    </aside>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Account Section */}
+        {publicKey && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Account</SidebarGroupLabel>
+            <SidebarGroupContent className="">
+              <SidebarMenu className="space-y-4">
+                <SidebarMenuItem>
+                  <SidebarMenuButton className="hover:bg-muted">
+                    <div className="text-sm font-mono group-data-[collapsible=icon]:hidden">
+                      {ellipsify(publicKey.toString())}
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarGroupLabel>Balance</SidebarGroupLabel>
+                  <SidebarMenuButton className="hover:bg-muted">
+                    <div className="group-data-[collapsible=icon]:hidden">
+                      <p className="text-sm font-semibold">{solBalance} SOL</p>
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.path
+
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+                      <Link href={item.path}>
+                        <Icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Additional Items */}
+        <SidebarGroup>
+          <SidebarGroupLabel>On-chain</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {additionalItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))
+
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+                      <Link href={item.path}>
+                        <Icon />
+                        <span>{item.label}</span>
+                        {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild tooltip={'account'}>
+            <Link href={'/account'}>
+              <UserIcon />
+              <span>Account</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarFooter>
+    </Sidebar>
   )
 }
-

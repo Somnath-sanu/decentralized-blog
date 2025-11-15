@@ -3,7 +3,9 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{transfer, Transfer};
 
-declare_id!("7VnZZbZcQiaKeAYf3KGFDMTpbG5dyHHVhhXCSj9GNGGH");
+declare_id!("Czns8AgxFTeEwn7JdKuXXUv2oW3SdYwGNDs7Z52tZjpg");
+
+const SPIN_COOLDOWN_SECS: i64 = 7 * 24 * 60 * 60;
 
 #[program]
 pub mod counter {
@@ -14,9 +16,11 @@ pub mod counter {
         pool.total_pool = 0;
         pool.total_entries = 0;
         pool.last_winner_number = 0;
+        pool.last_spin_timestamp = 0;
         pool.creator = *ctx.accounts.creator.key;
         Ok(())
     }
+
     pub fn create_blog_entry(
         ctx: Context<CreateEntry>,
         title: String,
@@ -30,6 +34,7 @@ pub mod counter {
         blog_entry.ipfs_hash = ipfs_hash;
         blog_entry.random_number = (Clock::get()?.unix_timestamp % 90000 + 10000) as u32; // 5-digit randomish number
         blog_entry.created_at = Clock::get()?.unix_timestamp;
+        blog_entry.tip = pool_contribution;
 
         // transfer SOL to weekly pool
         let lamports = pool_contribution;
@@ -50,11 +55,6 @@ pub mod counter {
         pool.total_pool += lamports;
         pool.total_entries += 1;
 
-        /*
-            We will pass the title from instruction to the struct CreateEntry
-            in order to do so we have to specify instruction macro
-            #[instruction(title: String)]
-        */
         Ok(())
     }
 
@@ -62,9 +62,20 @@ pub mod counter {
         let pool = &mut ctx.accounts.weekly_pool;
         require!(pool.total_entries > 0, CustomError::NoEntries);
 
-        // TODO: We will send the lucky number from frontend
-        let lucky_number = (Clock::get()?.unix_timestamp % 90000 + 10000) as u32;
-        pool.last_winner_number = lucky_number;
+        let now = Clock::get()?.unix_timestamp;
+
+        // 🧠 Check if last spin was within 7 days (7 * 24 * 60 * 60 seconds)
+        if pool.last_spin_timestamp != 0 && now - pool.last_spin_timestamp < SPIN_COOLDOWN_SECS {
+            return Err(error!(CustomError::SpinTooEarly));
+        }
+
+        // Validate the selected blog actually matches the chosen number
+        let blog = &ctx.accounts.winner_blog;
+
+        // Validate the winner pubkey matches the blog owner (defense-in-depth)
+        if ctx.accounts.winner.key() != blog.owner {
+            return Err(error!(CustomError::WinnerMismatch));
+        }
 
         let winner_share = pool.total_pool * 90 / 100;
         let owner_share = pool.total_pool - winner_share;
@@ -87,32 +98,25 @@ pub mod counter {
 
         pool.total_pool = 0;
         pool.total_entries = 0;
+        pool.last_winner_number = blog.random_number;
+        pool.last_spin_timestamp = now;
+
+        msg!(
+            "Winner blog: {:?}, random_number: {}",
+            blog.title,
+            blog.random_number
+        );
 
         Ok(())
     }
-
-    // pub fn update_blog_entry(
-    //     ctx: Context<UpdateEntry>,
-    //     _title: String,
-    //     message: String,
-    // ) -> Result<()> {
-    //     let blog_entry = &mut ctx.accounts.blog_entry;
-    //     blog_entry.message = message;
-
-    //     Ok(())
-    // }
-
-    // pub fn delete_blog_entry(_ctx: Context<DeleteEntry>, _title: String) -> Result<()> {
-    //     Ok(())
-    // }
 }
 
 #[derive(Accounts)]
 #[instruction(title: String)]
 pub struct CreateEntry<'info> {
     #[account(
-        init, // this will create account on chain
-        seeds = [title.as_bytes() , owner.key().as_ref()],
+        init,
+        seeds = [title.as_bytes(), owner.key().as_ref()],
         bump,
         space = 8 + BlogEntryState::INIT_SPACE,
         payer = owner
@@ -137,7 +141,7 @@ pub struct CreateEntry<'info> {
 pub struct UpdateEntry<'info> {
     #[account(
         mut,
-        seeds = [title.as_bytes() , owner.key().as_ref()],
+        seeds = [title.as_bytes(), owner.key().as_ref()],
         bump,
         realloc = 8 + BlogEntryState::INIT_SPACE,
         realloc::payer = owner,
@@ -156,7 +160,7 @@ pub struct UpdateEntry<'info> {
 pub struct DeleteEntry<'info> {
     #[account(
         mut,
-        seeds = [title.as_bytes() , owner.key().as_ref()],
+        seeds = [title.as_bytes(), owner.key().as_ref()],
         bump,
         close = owner
     )]
@@ -172,6 +176,8 @@ pub struct DeleteEntry<'info> {
 pub struct DeclareWinner<'info> {
     #[account(mut, seeds = [b"weekly_pool"], bump)]
     pub weekly_pool: Account<'info, WeeklyPool>,
+
+    pub winner_blog: Account<'info, BlogEntryState>,
 
     /// CHECK: winner wallet address found off-chain based on lucky number
     #[account(mut)]
@@ -204,13 +210,14 @@ pub struct InitializePool<'info> {
 #[account]
 #[derive(InitSpace)]
 pub struct BlogEntryState {
-    pub owner: Pubkey, // 32 bytes (fixed)
-    #[max_len(50)] // 4 bytes (borsh) + 50 (string , vec[] -> varibles)
+    pub owner: Pubkey,
+    #[max_len(50)]
     pub title: String,
-    #[max_len(100)] //* use IPFS for blog message (off-chain)
+    #[max_len(100)]
     pub ipfs_hash: String,
-    pub random_number: u32, // 4 bytes (borsh)
-    pub created_at: i64,    // 8 bytes (borsh)
+    pub random_number: u32,
+    pub created_at: i64,
+    pub tip: u64,
 }
 
 #[account]
@@ -220,12 +227,19 @@ pub struct WeeklyPool {
     pub total_pool: u64,
     pub total_entries: u64,
     pub last_winner_number: u32,
+    pub last_spin_timestamp: i64,
 }
 
 #[error_code]
 pub enum CustomError {
     #[msg("No entries found in the pool")]
     NoEntries,
+    #[msg("You must wait 7 days between winner declarations")]
+    SpinTooEarly,
+    #[msg("Chosen winner does not match any blog entry")]
+    InvalidWinner,
+    #[msg("Winner pubkey doesn't match blog owner")]
+    WinnerMismatch,
 }
 
 //* #[account] -> It only tells Anchor: This struct is meant to be stored inside a Solana account, and Anchor should serialize/deserialize it. It makes your struct: Use Anchor's Borsh serialization \n Get an automatic 8-byte discriminator\n Become eligible to be used in account constraints like: pub blog: Account<'info, BlogEntryState>  But it does not create the account./

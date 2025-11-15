@@ -10,6 +10,7 @@ import { useAnchorProvider } from '../solana/solana-provider'
 import { useTransactionToast } from '../use-transaction-toast'
 import { toast } from 'sonner'
 import { BN } from 'bn.js'
+import type { BlogProgramAccount } from '../lucky-wheel'
 
 interface CreateEntryArgs {
   title: string
@@ -43,7 +44,7 @@ export function useCounterProgram() {
       try {
         const account = await program.account.weeklyPool.fetch(weeklyPoolPda)
         return { account, publicKey: weeklyPoolPda }
-      } catch (error) {
+      } catch {
         // Pool might not be initialized yet
         return null
       }
@@ -56,13 +57,24 @@ export function useCounterProgram() {
       const [weeklyPoolPDA] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool')], program.programId)
       const info = await connection.getAccountInfo(weeklyPoolPDA)
 
-    if (!info) {
-      try {
-        await program.methods.initializePool().rpc()
-      } catch {
-        toast.warning('Pool account already exists')
+      const blogSeeds = [Buffer.from(title), provider.wallet.publicKey.toBuffer()]
+      const [blogPda] = PublicKey.findProgramAddressSync(blogSeeds, program.programId)
+
+      //TODO: Check the title lenght
+
+      const isBlogTitleAlredyInUse = !!(await connection.getAccountInfo(blogPda));
+
+      if (isBlogTitleAlredyInUse) {
+        throw new Error('Blog title already in use by this wallet')
       }
-    }
+
+      if (!info) {
+        try {
+          await program.methods.initializePool().rpc()
+        } catch {
+          toast.warning('Pool account already exists')
+        }
+      }
 
       return program.methods.createBlogEntry(title, ipfsHash, new BN(poolContribution)).rpc()
 
@@ -98,12 +110,41 @@ export function useCounterProgram() {
     },
   })
 
+  const declareWinner = useMutation<string, Error, BlogProgramAccount>({
+    mutationKey: [`declareWinner`, { cluster }],
+    mutationFn: async (blog: BlogProgramAccount) => {
+      const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool')], program.programId)
+      const poolData = await weeklyPool.refetch()
+      const creatorWallet = poolData.data?.account.creator
+      if (!creatorWallet) {
+        throw new Error('Creator wallet not found')
+      }
+      return program.methods
+        .declareWinner()
+        .accounts({
+          winnerBlog: blog.publicKey,
+          winner: blog.account.owner,
+          creatorWallet: creatorWallet,
+        })
+        .rpc()
+    },
+    onSuccess(signature) {
+      transactionToast(signature)
+      weeklyPool.refetch()
+      accounts.refetch()
+    },
+    onError(error) {
+      toast.error(`Error declaring winner: ${error.message}`)
+    },
+  })
+
   return {
     program,
     programId,
     accounts,
     getProgramAccount,
     createEntry,
+    declareWinner,
     weeklyPool,
   }
 }

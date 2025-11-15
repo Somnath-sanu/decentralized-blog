@@ -21,7 +21,7 @@ export function getCounterProgramId(cluster: Cluster) {
     case 'devnet':
     case 'testnet':
       // This is the program ID for the Counter program on devnet and testnet.
-      return new PublicKey('7VnZZbZcQiaKeAYf3KGFDMTpbG5dyHHVhhXCSj9GNGGH')
+      return new PublicKey('Czns8AgxFTeEwn7JdKuXXUv2oW3SdYwGNDs7Z52tZjpg')
     case 'mainnet-beta':
     default:
       return COUNTER_PROGRAM_ID

@@ -3,6 +3,9 @@ import './globals.css'
 import { AppProviders } from '@/components/app-providers'
 import { AppLayout } from '@/components/app-layout'
 import React from 'react'
+import { Provider } from 'jotai'
+import { Dancing_Script, Oxanium } from 'next/font/google'
+import { ThemeProvider } from '@/components/theme-provider'
 
 export const metadata: Metadata = {
   title: 'Curdapp',
@@ -14,13 +17,29 @@ const links: { label: string; path: string }[] = [
   { label: 'Account', path: '/account' },
 ]
 
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-dancing-script',
+})
+
+const oxanium = Oxanium({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-oxanium',
+})
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`antialiased`}>
-        <AppProviders>
-          <AppLayout links={links}>{children}</AppLayout>
-        </AppProviders>
+      <body className={`antialiased ${dancingScript.variable} ${oxanium.variable} font-oxanium `}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AppProviders>
+            <AppLayout links={links}>
+              <Provider>{children}</Provider>
+            </AppLayout>
+          </AppProviders>
+        </ThemeProvider>
       </body>
     </html>
   )
