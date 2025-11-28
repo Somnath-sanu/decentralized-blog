@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/declare-winner",
-      "schedule": "0 * * * *",
+      "schedule": "0 0 * * *",
       "headers": {
         "x-cron-secret": "${process.env.CRON_SECRET}"
       }
