@@ -9,7 +9,7 @@ import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('x-cron-secret')
+    const authHeader = request.headers.get('authorization')
     if (authHeader !== process.env.CRON_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
