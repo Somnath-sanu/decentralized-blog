@@ -6,9 +6,8 @@ import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 
 export async function GET(request: Request) {
   try {
-    console.log(request.headers)
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== process.env.CRON_SECRET) {
+    if (!authHeader || authHeader.split(' ')[1] !== process.env.CRON_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
