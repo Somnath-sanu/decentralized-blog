@@ -53,7 +53,7 @@ function BlogCard({ account }: { account: PublicKey }) {
       : text || 'Click to view the full blog post and its content.'
   }, [blogContent.data])
 
-  const tipAmount = blogData ? Math.floor(Number(blogData.tip) / LAMPORTS_PER_SOL) : '0'
+  const tipAmount = blogData ? (Number(blogData.tip) / LAMPORTS_PER_SOL).toFixed(2) : '0'
 
   if (accountQuery.isLoading || !blogData) {
     return <BlogCardSkeleton />
@@ -136,6 +136,13 @@ export default function AllBlogsPage() {
       })
     }
 
+ 
+    filtered = filtered.sort((a, b) => {
+      const timeA = Number(a.account.createdAt)
+      const timeB = Number(b.account.createdAt)
+      return timeB - timeA // Descending order (newest first)
+    })
+
     return filtered
   }, [accounts.data, searchQuery])
 
@@ -156,7 +163,6 @@ export default function AllBlogsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-12">
-      {/* Title and Description */}
       <div className="mb-12 text-center">
         <div className="">
           <h1 className="text-3xl sm:text-5xl font-bold mb-6">Our Latest Thoughts</h1>
@@ -181,7 +187,6 @@ export default function AllBlogsPage() {
         </div>
       </div>
 
-      {/* Search and Filters */}
       <div className="mb-12 space-y-4">
         <div className="relative max-w-md mx-auto">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
