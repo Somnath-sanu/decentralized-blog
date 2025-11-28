@@ -4,11 +4,9 @@ import { AnchorProvider, Program } from '@coral-xyz/anchor'
 import { getCounterProgram, getCounterProgramId } from '@project/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 
-// This endpoint will be called by Vercel Cron
-// Configure in vercel.json: { "crons": [{ "path": "/api/cron/declare-winner", "schedule": "0 * * * *" }] }
-
 export async function GET(request: Request) {
   try {
+    console.log(request.headers)
     const authHeader = request.headers.get('authorization')
     if (authHeader !== process.env.CRON_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -101,12 +99,4 @@ export async function GET(request: Request) {
       { status: 500 },
     )
   }
-}
-
-// Allow manual testing in development
-export async function POST(request: Request) {
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({ error: 'Only available in development' }, { status: 403 })
-  }
-  return GET(request)
 }
