@@ -1,0 +1,305 @@
+{
+  "address": "Czns8AgxFTeEwn7JdKuXXUv2oW3SdYwGNDs7Z52tZjpg",
+  "metadata": {
+    "name": "counter",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "create_blog_entry",
+      "discriminator": [
+        49,
+        38,
+        245,
+        188,
+        173,
+        155,
+        102,
+        157
+      ],
+      "accounts": [
+        {
+          "name": "blog_entry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "title"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "weekly_pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  101,
+                  101,
+                  107,
+                  108,
+                  121,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "ipfs_hash",
+          "type": "string"
+        },
+        {
+          "name": "pool_contribution",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "declare_winner",
+      "discriminator": [
+        140,
+        135,
+        197,
+        50,
+        9,
+        23,
+        4,
+        80
+      ],
+      "accounts": [
+        {
+          "name": "weekly_pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  101,
+                  101,
+                  107,
+                  108,
+                  121,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "winner_blog"
+        },
+        {
+          "name": "winner",
+          "writable": true
+        },
+        {
+          "name": "creator_wallet",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_pool",
+      "discriminator": [
+        95,
+        180,
+        10,
+        172,
+        84,
+        174,
+        232,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "weekly_pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  101,
+                  101,
+                  107,
+                  108,
+                  121,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "BlogEntryState",
+      "discriminator": [
+        32,
+        194,
+        56,
+        21,
+        2,
+        166,
+        32,
+        91
+      ]
+    },
+    {
+      "name": "WeeklyPool",
+      "discriminator": [
+        3,
+        195,
+        44,
+        82,
+        96,
+        32,
+        221,
+        165
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NoEntries",
+      "msg": "No entries found in the pool"
+    },
+    {
+      "code": 6001,
+      "name": "SpinTooEarly",
+      "msg": "You must wait 7 days between winner declarations"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidWinner",
+      "msg": "Chosen winner does not match any blog entry"
+    },
+    {
+      "code": 6003,
+      "name": "WinnerMismatch",
+      "msg": "Winner pubkey doesn't match blog owner"
+    }
+  ],
+  "types": [
+    {
+      "name": "BlogEntryState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "ipfs_hash",
+            "type": "string"
+          },
+          {
+            "name": "random_number",
+            "type": "u32"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "tip",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WeeklyPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_pool",
+            "type": "u64"
+          },
+          {
+            "name": "total_entries",
+            "type": "u64"
+          },
+          {
+            "name": "last_winner_number",
+            "type": "u32"
+          },
+          {
+            "name": "last_spin_timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}
