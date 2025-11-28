@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, PlusCircle, Gift, User, RefreshCw, TrendingUp, UserIcon } from 'lucide-react'
+import { Home, PlusCircle, RefreshCw, UserIcon } from 'lucide-react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useGetBalance } from './account/account-data-access'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
@@ -44,7 +44,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem className="mt-4 ">
-            <SidebarMenuButton className="hover:bg-muted">
+            <SidebarMenuButton className="hover:bg-muted dark:hover:bg-transparent dark:text-white">
               <Link href="/" className="flex items-center gap-2 px-2 py-4">
                 <h1 className="text-2xl font-bold font-serif">Solggy</h1>
               </Link>
@@ -59,7 +59,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton className="hover:bg-muted">
+                <SidebarMenuButton className="hover:bg-muted dark:hover:bg-transparent">
                   {open && (
                     <Badge className="">
                       {cluster.network === 'devnet'
@@ -82,15 +82,15 @@ export function AppSidebar() {
             <SidebarGroupContent className="">
               <SidebarMenu className="space-y-4">
                 <SidebarMenuItem>
-                  <SidebarMenuButton className="hover:bg-muted">
-                    <div className="text-sm font-mono group-data-[collapsible=icon]:hidden">
-                      {ellipsify(publicKey.toString())}
+                  <SidebarMenuButton className="hover:bg-muted dark:hover:bg-transparent">
+                    <div className="text-sm font-mono group-data-[collapsible=icon]:hidden dark:text-white">
+                      {ellipsify(publicKey.toString(), 6)}
                     </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarGroupLabel>Balance</SidebarGroupLabel>
-                  <SidebarMenuButton className="hover:bg-muted">
+                  <SidebarMenuButton className="hover:bg-muted dark:hover:bg-transparent dark:text-white">
                     <div className="group-data-[collapsible=icon]:hidden">
                       <p className="text-sm font-semibold">{solBalance} SOL</p>
                     </div>
@@ -140,7 +140,11 @@ export function AppSidebar() {
                       <Link href={item.path}>
                         <Icon />
                         <span>{item.label}</span>
-                        {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+                        {item.badge && (
+                          <SidebarMenuBadge className={`${isActive ? 'dark:text-black' : 'dark:text-white'}`}>
+                            {item.badge}
+                          </SidebarMenuBadge>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

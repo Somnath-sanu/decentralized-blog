@@ -50,7 +50,7 @@ export default function BlogDetailPage() {
   const blogData = accountQuery.data
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 my-2">
       <Link href="/blogs">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -61,7 +61,7 @@ export default function BlogDetailPage() {
       <motion.article
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/5 backdrop-blur-xl rounded-xl border border-purple-500/20 p-8"
+        className="bg-white/5 backdrop-blur-xl rounded-xl border border-purple-500/20 p-8 mb-4"
       >
         <h1 className="text-4xl font-bold text-purple-200 mb-6">{blogData.title}</h1>
 
@@ -90,8 +90,8 @@ export default function BlogDetailPage() {
         )}
 
         <div className="mt-8 pt-6 border-t border-purple-500/20">
-          <p className="text-xs text-gray-500 font-mono">Account: {ellipsify(accountAddress)}</p>
-          <p className="text-xs text-gray-500 font-mono mt-1">IPFS Hash: {blogData.ipfsHash}</p>
+          <p className="text-xs text-gray-500 font-mono">Account: {ellipsify(accountAddress,6)}</p>
+          {/* <p className="text-xs text-gray-500 font-mono mt-1">IPFS Hash: {blogData.ipfsHash}</p> */}
         </div>
       </motion.article>
     </div>

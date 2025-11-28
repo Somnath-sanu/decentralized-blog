@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Disallow API routes from being crawled
+Disallow: /api/
+
+# Allow all other pages
+Allow: /blogs
+Allow: /lucky-wheel
+Allow: /account
+
+# Sitemap location
+Sitemap: https://sloogy.vercel.app/sitemap.xml

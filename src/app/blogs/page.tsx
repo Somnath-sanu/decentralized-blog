@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchFromIPFS } from '@/lib/pinata-client'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getPinataGatewayUrl } from '@/lib/pinata'
 
 const PLACEHOLDER_IMAGE = '/anime.jpeg'
 
@@ -34,11 +35,7 @@ function BlogCard({ account }: { account: PublicKey }) {
   // Get first image from IPFS or use placeholder
   const articleImage = useMemo(() => {
     if (blogContent.data?.images && blogContent.data.images.length > 0) {
-      const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL
-        ? process.env.NEXT_PUBLIC_GATEWAY_URL.startsWith('http')
-          ? process.env.NEXT_PUBLIC_GATEWAY_URL
-          : `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`
-        : 'https://gateway.pinata.cloud'
+      const gatewayUrl = getPinataGatewayUrl()
       return `${gatewayUrl}/ipfs/${blogContent.data.images[0]}`
     }
     return PLACEHOLDER_IMAGE
@@ -56,8 +53,6 @@ function BlogCard({ account }: { account: PublicKey }) {
       : text || 'Click to view the full blog post and its content.'
   }, [blogContent.data])
 
-  // Tip jar amount - placeholder since poolContribution is not stored in blog entry
-  // In a real implementation, this could be fetched from a separate account or calculated
   const tipAmount = blogData ? Math.floor(Number(blogData.tip) / LAMPORTS_PER_SOL) : '0'
 
   if (accountQuery.isLoading || !blogData) {
@@ -72,7 +67,6 @@ function BlogCard({ account }: { account: PublicKey }) {
         whileHover={{ y: -8, scale: 1.02 }}
         className="rounded-xl overflow-hidden border border-gray-700 hover:border-blue-500/50 shadow-lg hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer"
       >
-        {/* Article Image */}
         <div className="relative w-full h-56 overflow-hidden">
           {blogContent.isLoading ? (
             <Skeleton className="w-full h-full bg-gray-700" />
@@ -86,7 +80,7 @@ function BlogCard({ account }: { account: PublicKey }) {
                 className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
               />
               <div className="absolute inset-0 " />
-              {/* Tip Badge */}
+
               <div className="absolute top-3 right-3 bg-linear-to-r from-yellow-400 to-orange-500 text-black text-xs font-bold px-2 py-1 rounded-full shadow-lg">
                 💰 {tipAmount} SOL
               </div>
@@ -94,18 +88,16 @@ function BlogCard({ account }: { account: PublicKey }) {
           )}
         </div>
 
-        {/* Article Content */}
         <div className="p-6">
           <h3 className="text-xl font-bold mb-3 line-clamp-2 hover:text-blue-400 transition-colors">
             {blogData.title}
           </h3>
-          <p className="text-sm text-gray-300 mb-4 line-clamp-3 leading-relaxed">{description}</p>
+          <p className="text-sm text-gray-300 mb-4 line-clamp-1 leading-relaxed">{description}</p>
 
-          {/* Metadata */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-xs text-gray-400">
               <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-full bg-linear-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
                   <User className="w-3 h-3 " />
                 </div>
                 <span className="font-medium">{ellipsify(blogData.owner.toString(), 6)}</span>
@@ -121,20 +113,6 @@ function BlogCard({ account }: { account: PublicKey }) {
         </div>
       </motion.div>
     </Link>
-  )
-}
-
-function BlogCardSkeleton() {
-  return (
-    <div className="rounded-xl overflow-hidden border border-gray-700 shadow-lg">
-      <Skeleton className="w-full h-56 bg-gray-700" />
-      <div className="p-6">
-        <Skeleton className="h-6 w-3/4 bg-gray-700 mb-3" />
-        <Skeleton className="h-4 w-full bg-gray-700 mb-2" />
-        <Skeleton className="h-4 w-2/3 bg-gray-700 mb-4" />
-        <Skeleton className="h-4 w-1/2 bg-gray-700" />
-      </div>
-    </div>
   )
 }
 
@@ -165,10 +143,10 @@ export default function AllBlogsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-6 p-8 rounded-xl border border-gray-800">
-          <h2 className="text-3xl font-bold">Welcome to Ink & Ideas</h2>
+          <h2 className="text-3xl font-bold">Welcome to Sloogy</h2>
           <p className="text-gray-400 max-w-md">
             Connect your Solana wallet to dive into a world of community-driven content. Create, read, and own your
-            posts on the blockchain.
+            posts on the blockchain and get chance to win prizes.
           </p>
           <WalletButton />
         </div>
@@ -181,9 +159,9 @@ export default function AllBlogsPage() {
       {/* Title and Description */}
       <div className="mb-12 text-center">
         <div className="">
-          <h1 className="text-5xl font-bold mb-4">Our Latest Thoughts</h1>
+          <h1 className="text-3xl sm:text-5xl font-bold mb-6">Our Latest Thoughts</h1>
         </div>
-        <p className="text-xl text-gray-300 mb-8 max-w-4xl mx-auto leading-relaxed">
+        <p className="text-lg sm:text-xl text-gray-300 mb-4 max-w-4xl mx-auto leading-relaxed text-balance">
           Discover decentralized content from creators across the Solana ecosystem. Own your words, tip your favorites,
           and explore the future of blogging.
         </p>
@@ -217,7 +195,6 @@ export default function AllBlogsPage() {
         </div>
       </div>
 
-      {/* Article Grid */}
       {accounts.isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -277,6 +254,20 @@ export default function AllBlogsPage() {
           </button>
         </div>
       )} */}
+    </div>
+  )
+}
+
+function BlogCardSkeleton() {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-700 shadow-lg">
+      <Skeleton className="w-full h-56 bg-gray-700" />
+      <div className="p-6">
+        <Skeleton className="h-6 w-3/4 bg-gray-700 mb-3" />
+        <Skeleton className="h-4 w-full bg-gray-700 mb-2" />
+        <Skeleton className="h-4 w-2/3 bg-gray-700 mb-4" />
+        <Skeleton className="h-4 w-1/2 bg-gray-700" />
+      </div>
     </div>
   )
 }

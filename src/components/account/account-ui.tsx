@@ -69,7 +69,7 @@ export function AccountButtons({ address }: { address: PublicKey }) {
   const { cluster } = useCluster()
   return (
     <div>
-      <div className="space-x-2">
+      <div className="space-x-2 dark:text-white dark:hover:text-white">
         {cluster.network?.includes('mainnet') ? null : <ModalAirdrop address={address} />}
         <ModalSend address={address} />
         <ModalReceive address={address} />

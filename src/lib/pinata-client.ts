@@ -1,6 +1,6 @@
 'use client'
 
-import { useWallet } from '@solana/wallet-adapter-react'
+import { getPinataGatewayUrl } from "./pinata"
 
 /**
  * Client-side Pinata utilities for uploading blog content and images
@@ -73,11 +73,7 @@ export async function uploadBlogContentToPinata(content: BlogContent, pubKey: st
  */
 export async function fetchFromIPFS(ipfsHash: string): Promise<BlogContent> {
   // Support both custom gateway and default Pinata gateway
-  const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL
-    ? process.env.NEXT_PUBLIC_GATEWAY_URL.startsWith('http')
-      ? process.env.NEXT_PUBLIC_GATEWAY_URL
-      : `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`
-    : 'https://gateway.pinata.cloud'
+  const gatewayUrl = getPinataGatewayUrl()
 
   const url = `${gatewayUrl}/ipfs/${ipfsHash}`
 

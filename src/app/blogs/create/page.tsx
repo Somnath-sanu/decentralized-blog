@@ -43,13 +43,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { getPinataGatewayUrl } from '@/lib/pinata'
 
 const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  content: z
-    .string()
-    .min(1, 'Content is required')
-    .refine((val) => val !== '<p>Start writing your blog post...</p>', 'Please write some content'),
+  title: z.string().min(1, 'Title is required').max(50, 'Title must be at most 50 characters long'),
+  content: z.string().min(0, 'Content is required'),
   solContribution: z.number().min(0.1, 'Minimum contribution is 0.1 SOL').max(10, 'Maximum contribution is 10 SOL'),
 })
 
@@ -65,7 +63,7 @@ export default function CreateBlogPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      content: '<p>Start writing your blog post...</p>',
+      content: '',
       solContribution: 0.1,
     },
   })
@@ -86,7 +84,7 @@ export default function CreateBlogPage() {
       CodeBlock,
       HorizontalRule,
     ],
-    content: '<p>Start writing your blog post...</p>',
+    content: '',
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -111,12 +109,7 @@ export default function CreateBlogPage() {
 
         // Insert image into editor
         if (editor) {
-          // Support both custom gateway and default Pinata gateway
-          const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL
-            ? process.env.NEXT_PUBLIC_GATEWAY_URL.startsWith('http')
-              ? process.env.NEXT_PUBLIC_GATEWAY_URL
-              : `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}`
-            : 'https://gateway.pinata.cloud'
+          const gatewayUrl = getPinataGatewayUrl()
           const imageUrl = `${gatewayUrl}/ipfs/${ipfsHash}`
           editor.chain().focus().setImage({ src: imageUrl }).run()
         }
@@ -140,7 +133,6 @@ export default function CreateBlogPage() {
     try {
       setUploading(true)
 
-      // Upload blog content to Pinata
       const blogContent = {
         body: data.content,
         images: uploadedImages,
@@ -148,12 +140,10 @@ export default function CreateBlogPage() {
 
       const ipfsHash = await uploadBlogContentToPinata(blogContent, publicKey.toBase58())
 
-      toast.success('Blog content uploaded to IPFS!')
+      toast.success('Blog content uploaded successfully!')
 
-      // Convert SOL to lamports
       const lamports = Math.floor(data.solContribution * LAMPORTS_PER_SOL)
 
-      // Create blog entry on-chain
       await createEntry.mutateAsync({
         title: data.title.trim(),
         ipfsHash,
@@ -162,7 +152,6 @@ export default function CreateBlogPage() {
 
       toast.success('Blog created successfully!')
 
-      // Reset form
       form.reset()
       editor?.commands.clearContent()
       setUploadedImages([])
@@ -193,7 +182,6 @@ export default function CreateBlogPage() {
     )
   }
 
-  // Toolbar component for editor
   const Toolbar = () => (
     <div className="border-b border-purple-500/30 p-2 flex gap-1 flex-wrap">
       <Button
@@ -323,7 +311,7 @@ export default function CreateBlogPage() {
   )
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 mb-4 px-4">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
         <div className="text-gray-400 text-xl mt-3">Share your thoughts with the decentralized community</div>
       </motion.div>

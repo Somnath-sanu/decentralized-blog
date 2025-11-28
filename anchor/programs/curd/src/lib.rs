@@ -64,7 +64,7 @@ pub mod counter {
 
         let now = Clock::get()?.unix_timestamp;
 
-        // 🧠 Check if last spin was within 7 days (7 * 24 * 60 * 60 seconds)
+        // Check if last spin was within 7 days (7 * 24 * 60 * 60 seconds)
         if pool.last_spin_timestamp != 0 && now - pool.last_spin_timestamp < SPIN_COOLDOWN_SECS {
             return Err(error!(CustomError::SpinTooEarly));
         }

@@ -2,7 +2,7 @@
 
 import { getCounterProgram, getCounterProgramId } from '@project/anchor'
 import { useConnection } from '@solana/wallet-adapter-react'
-import { Cluster, Keypair, PublicKey, SystemProgram } from '@solana/web3.js'
+import { PublicKey } from '@solana/web3.js'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useCluster } from '../cluster/cluster-data-access'
@@ -27,7 +27,7 @@ export function useCounterProgram() {
   const program = useMemo(() => getCounterProgram(provider, programId), [provider, programId])
 
   const accounts = useQuery({
-    queryKey: ['counter', 'all', { cluster }],
+    queryKey: ['blogEntry', 'all', { cluster }],
     queryFn: () => program.account.blogEntryState.all(),
   })
 
@@ -36,7 +36,6 @@ export function useCounterProgram() {
     queryFn: () => connection.getParsedAccountInfo(programId),
   })
 
-  // Fetch weekly pool account
   const weeklyPool = useQuery({
     queryKey: ['weekly-pool', { cluster }],
     queryFn: async () => {
@@ -60,9 +59,11 @@ export function useCounterProgram() {
       const blogSeeds = [Buffer.from(title), provider.wallet.publicKey.toBuffer()]
       const [blogPda] = PublicKey.findProgramAddressSync(blogSeeds, program.programId)
 
-      //TODO: Check the title lenght
+      if (title.length > 50) {
+        throw new Error('Title must be at most 50 characters long')
+      }
 
-      const isBlogTitleAlredyInUse = !!(await connection.getAccountInfo(blogPda));
+      const isBlogTitleAlredyInUse = !!(await connection.getAccountInfo(blogPda))
 
       if (isBlogTitleAlredyInUse) {
         throw new Error('Blog title already in use by this wallet')
@@ -115,10 +116,12 @@ export function useCounterProgram() {
     mutationFn: async (blog: BlogProgramAccount) => {
       const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool')], program.programId)
       const poolData = await weeklyPool.refetch()
+
       const creatorWallet = poolData.data?.account.creator
       if (!creatorWallet) {
         throw new Error('Creator wallet not found')
       }
+
       return program.methods
         .declareWinner()
         .accounts({
@@ -151,11 +154,10 @@ export function useCounterProgram() {
 
 export function useCounterProgramAccount({ account }: { account: PublicKey }) {
   const { cluster } = useCluster()
-  const transactionToast = useTransactionToast()
   const { program, accounts } = useCounterProgram()
 
   const accountQuery = useQuery({
-    queryKey: ['counter', 'fetch', { cluster, account }],
+    queryKey: ['blogEntry', 'fetch', { cluster, account }],
     queryFn: () => program.account.blogEntryState.fetch(account),
   })
 
