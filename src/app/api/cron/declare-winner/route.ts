@@ -33,6 +33,7 @@ export async function GET(request: Request) {
     const timeSinceLastSpin = now - Number(poolData.lastSpinTimestamp)
 
     if (timeSinceLastSpin < cooldownSeconds) {
+      console.log("Cooldown active")
       return NextResponse.json({
         message: 'Cooldown active',
         nextDrawIn: cooldownSeconds - timeSinceLastSpin,
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
     }
 
     if (Number(poolData.totalEntries) === 0) {
+      console.log("No entries in pool")
       return NextResponse.json({
         message: 'No entries in pool',
         totalEntries: 0,
@@ -49,6 +51,7 @@ export async function GET(request: Request) {
 
     const allBlogs = await program.account.blogEntryState.all()
     if (allBlogs.length === 0) {
+      console.log("No blog entries found")
       return NextResponse.json({
         message: 'No blog entries found',
         totalEntries: 0,
