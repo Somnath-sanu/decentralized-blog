@@ -12,7 +12,7 @@ const siteConfig = {
   title: 'Sloogy - Decentralized Blogging on Solana Blockchain',
   description:
     'Create, share, and own your blog posts on the Solana blockchain. Join our decentralized blogging platform with automated weekly prize draws. Write content, earn rewards, and be part of the Web3 revolution.',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://sloogy.vercel.app',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://sloogy.devs24.com',
   ogImage: '/og-image.png',
   keywords: [
     'Solana',

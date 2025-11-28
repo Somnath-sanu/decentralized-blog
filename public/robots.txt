@@ -10,4 +10,4 @@ Allow: /lucky-wheel
 Allow: /account
 
 # Sitemap location
-Sitemap: https://sloogy.vercel.app/sitemap.xml
+Sitemap: https://sloogy.devs24.com/sitemap.xml
