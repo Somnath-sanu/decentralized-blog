@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
-import { AnchorProvider, Program } from '@coral-xyz/anchor'
+import { AnchorProvider } from '@coral-xyz/anchor'
 import { getCounterProgram, getCounterProgramId } from '@project/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const cronKeypair = Keypair.fromSecretKey(new Uint8Array(privateKeyArray))
     const wallet = new NodeWallet(cronKeypair)
 
-    const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' })
+    const provider = new AnchorProvider(connection, wallet, { commitment: 'processed' })
     const programId = getCounterProgramId('devnet')
     const program = getCounterProgram(provider, programId)
 
@@ -73,7 +73,13 @@ export async function GET(request: Request) {
         winner: winnerBlog.account.owner,
         creatorWallet: poolData.creator,
       })
-      .rpc()
+      .rpc({
+        commitment: 'processed',
+        maxRetries: 3,
+        preflightCommitment: 'processed',
+      })
+
+    await connection.confirmTransaction(signature, 'processed')
 
     console.log('Winner declared successfully:', signature)
 
