@@ -3,7 +3,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{transfer, Transfer};
 
-declare_id!("Czns8AgxFTeEwn7JdKuXXUv2oW3SdYwGNDs7Z52tZjpg");
+declare_id!("FpsfKtSsRGMnZBWd6mF3yVQdpWWJx5btjygt8YNAUTj3");
 
 const SPIN_COOLDOWN_SECS: i64 = 7 * 24 * 60 * 60;
 
@@ -128,7 +128,7 @@ pub struct CreateEntry<'info> {
 
     #[account(
         mut,
-        seeds = [b"weekly_pool"],
+        seeds = [b"weekly_pool_data"],
         bump
     )]
     pub weekly_pool: Account<'info, WeeklyPool>,
@@ -174,7 +174,7 @@ pub struct DeleteEntry<'info> {
 
 #[derive(Accounts)]
 pub struct DeclareWinner<'info> {
-    #[account(mut, seeds = [b"weekly_pool"], bump)]
+    #[account(mut, seeds = [b"weekly_pool_data"], bump)]
     pub weekly_pool: Account<'info, WeeklyPool>,
 
     pub winner_blog: Account<'info, BlogEntryState>,
@@ -196,7 +196,7 @@ pub struct InitializePool<'info> {
         init,
         payer = creator,
         space = 8 + WeeklyPool::INIT_SPACE,
-        seeds = [b"weekly_pool"],
+        seeds = [b"weekly_pool_data"],
         bump
     )]
     pub weekly_pool: Account<'info, WeeklyPool>,

@@ -26,6 +26,8 @@ export function useCounterProgram() {
   const programId = useMemo(() => getCounterProgramId('devnet'), [cluster])
   const program = useMemo(() => getCounterProgram(provider, programId), [provider, programId])
 
+  console.log("programId", programId.toBase58())
+
   const accounts = useQuery({
     queryKey: ['blogEntry', 'all', { cluster }],
     queryFn: () => program.account.blogEntryState.all(),
@@ -39,7 +41,7 @@ export function useCounterProgram() {
   const weeklyPool = useQuery({
     queryKey: ['weekly-pool', { cluster }],
     queryFn: async () => {
-      const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool')], programId)
+      const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool_data')], programId)
       try {
         const account = await program.account.weeklyPool.fetch(weeklyPoolPda)
         return { account, publicKey: weeklyPoolPda }
@@ -53,7 +55,7 @@ export function useCounterProgram() {
   const createEntry = useMutation<string, Error, CreateEntryArgs>({
     mutationKey: [`blogEntry`, `create`, { cluster }],
     mutationFn: async ({ title, ipfsHash, poolContribution }) => {
-      const [weeklyPoolPDA] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool')], program.programId)
+      const [weeklyPoolPDA] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool_data')], program.programId)
       const info = await connection.getAccountInfo(weeklyPoolPDA)
 
       const blogSeeds = [Buffer.from(title), provider.wallet.publicKey.toBuffer()]
@@ -72,7 +74,8 @@ export function useCounterProgram() {
       if (!info) {
         try {
           await program.methods.initializePool().rpc()
-        } catch {
+        } catch (error) {
+          console.log(error)
           toast.warning('Pool account already exists')
         }
       }
@@ -107,6 +110,7 @@ export function useCounterProgram() {
       accounts.refetch()
     },
     onError(error) {
+      console.log(error)
       toast.error(`Error creating entry : ${error.message}`)
     },
   })
@@ -114,7 +118,7 @@ export function useCounterProgram() {
   const declareWinner = useMutation<string, Error, BlogProgramAccount>({
     mutationKey: [`declareWinner`, { cluster }],
     mutationFn: async (blog: BlogProgramAccount) => {
-      const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool')], program.programId)
+      const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool_data')], program.programId)
       const poolData = await weeklyPool.refetch()
 
       const creatorWallet = poolData.data?.account.creator

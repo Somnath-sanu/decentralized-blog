@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/counter.json`.
  */
 export type Counter = {
-  "address": "Czns8AgxFTeEwn7JdKuXXUv2oW3SdYwGNDs7Z52tZjpg",
+  "address": "FpsfKtSsRGMnZBWd6mF3yVQdpWWJx5btjygt8YNAUTj3",
   "metadata": {
     "name": "counter",
     "version": "0.1.0",
@@ -65,7 +65,12 @@ export type Counter = {
                   112,
                   111,
                   111,
-                  108
+                  108,
+                  95,
+                  100,
+                  97,
+                  116,
+                  97
                 ]
               }
             ]
@@ -122,7 +127,12 @@ export type Counter = {
                   112,
                   111,
                   111,
-                  108
+                  108,
+                  95,
+                  100,
+                  97,
+                  116,
+                  97
                 ]
               }
             ]
@@ -177,7 +187,12 @@ export type Counter = {
                   112,
                   111,
                   111,
-                  108
+                  108,
+                  95,
+                  100,
+                  97,
+                  116,
+                  97
                 ]
               }
             ]

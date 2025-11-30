@@ -54,7 +54,7 @@ export function useGetTokenAccounts({ address }: { address: PublicKey }) {
 }
 
 export function useTransferSol({ address }: { address: PublicKey }) {
-  const { connection } = useConnection()
+  const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL!, 'confirmed')
   const transactionToast = useTransactionToast()
   const wallet = useWallet()
   const client = useQueryClient()
@@ -77,7 +77,6 @@ export function useTransferSol({ address }: { address: PublicKey }) {
         // Send transaction and await for signature
         await connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed')
 
-        console.log(signature)
         return signature
       } catch (error: unknown) {
         console.log('error', `Transaction failed! ${error}`, signature)
@@ -88,7 +87,8 @@ export function useTransferSol({ address }: { address: PublicKey }) {
     onSuccess: async (signature) => {
       if (signature) {
         transactionToast(signature)
-        console.log('Transaction sent', signature)
+        
+
       }
       await Promise.all([
         client.invalidateQueries({

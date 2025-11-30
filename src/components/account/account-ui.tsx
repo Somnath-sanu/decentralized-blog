@@ -53,7 +53,7 @@ export function AccountBalanceCheck({ address }: { address: PublicKey }) {
     return (
       <AppAlert
         action={
-          <Button variant="outline" onClick={() => mutation.mutateAsync(1).catch((err) => console.log(err))}>
+          <Button variant="outline" onClick={async () => await mutation.mutateAsync(1).catch((err) => console.log(err))}>
             Request Airdrop
           </Button>
         }
@@ -268,7 +268,7 @@ function ModalAirdrop({ address }: { address: PublicKey }) {
       title="Airdrop"
       submitDisabled={!amount || mutation.isPending}
       submitLabel="Request Airdrop"
-      submit={() => mutation.mutateAsync(parseFloat(amount))}
+      submit={async () => await mutation.mutateAsync(parseFloat(amount))}
     >
       <Label htmlFor="amount">Amount</Label>
       <Input
@@ -300,8 +300,8 @@ function ModalSend({ address }: { address: PublicKey }) {
       title="Send"
       submitDisabled={!destination || !amount || mutation.isPending}
       submitLabel="Send"
-      submit={() => {
-        mutation.mutateAsync({
+      submit={async () => {
+        await mutation.mutateAsync({
           destination: new PublicKey(destination),
           amount: parseFloat(amount),
         })

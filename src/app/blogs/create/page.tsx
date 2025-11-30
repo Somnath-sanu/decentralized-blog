@@ -44,6 +44,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { getPinataGatewayUrl } from '@/lib/pinata'
+import { Placeholder } from '@tiptap/extensions'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(50, 'Title must be at most 50 characters long'),
@@ -83,6 +84,9 @@ export default function CreateBlogPage() {
       ListItem,
       CodeBlock,
       HorizontalRule,
+      Placeholder.configure({
+        placeholder: 'What is on your mind? 👀',
+      }),
     ],
     content: '',
     immediatelyRender: false,
