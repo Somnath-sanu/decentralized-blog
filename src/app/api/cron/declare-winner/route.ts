@@ -12,7 +12,11 @@ export async function GET(request: Request) {
     }
 
     const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
-    const connection = new Connection(rpcUrl, 'confirmed')
+    const connection = new Connection(rpcUrl, {
+      commitment: 'confirmed',
+      // Disable WebSocket to prevent subscription errors
+      wsEndpoint: undefined,
+    })
 
     const privateKeyArray = JSON.parse(process.env.CRON_WALLET_PRIVATE_KEY || '[]')
     if (!privateKeyArray.length) {
@@ -21,7 +25,10 @@ export async function GET(request: Request) {
     const cronKeypair = Keypair.fromSecretKey(new Uint8Array(privateKeyArray))
     const wallet = new NodeWallet(cronKeypair)
 
-    const provider = new AnchorProvider(connection, wallet, { commitment: 'processed' })
+    const provider = new AnchorProvider(connection, wallet, {
+      commitment: 'confirmed',
+      skipPreflight: false,
+    })
     const programId = getCounterProgramId('devnet')
     const program = getCounterProgram(provider, programId)
 
@@ -33,7 +40,7 @@ export async function GET(request: Request) {
     const timeSinceLastSpin = now - Number(poolData.lastSpinTimestamp)
 
     if (timeSinceLastSpin < cooldownSeconds) {
-      console.log("Cooldown active")
+      console.log('Cooldown active')
       return NextResponse.json({
         message: 'Cooldown active',
         nextDrawIn: cooldownSeconds - timeSinceLastSpin,
@@ -42,7 +49,7 @@ export async function GET(request: Request) {
     }
 
     if (Number(poolData.totalEntries) === 0) {
-      console.log("No entries in pool")
+      console.log('No entries in pool')
       return NextResponse.json({
         message: 'No entries in pool',
         totalEntries: 0,
@@ -51,7 +58,7 @@ export async function GET(request: Request) {
 
     const allBlogs = await program.account.blogEntryState.all()
     if (allBlogs.length === 0) {
-      console.log("No blog entries found")
+      console.log('No blog entries found')
       return NextResponse.json({
         message: 'No blog entries found',
         totalEntries: 0,
@@ -77,18 +84,42 @@ export async function GET(request: Request) {
         creatorWallet: poolData.creator,
       })
       .rpc({
-        commitment: 'processed',
-        maxRetries: 3,
-        preflightCommitment: 'processed',
+        commitment: 'confirmed',
+        skipPreflight: false,
       })
 
-    await connection.confirmTransaction(signature, 'processed')
+    // Poll for confirmation instead of using WebSocket subscription
+    let confirmed = false
+    let attempts = 0
+    const maxAttempts = 30 // 30 seconds timeout
+
+    while (!confirmed && attempts < maxAttempts) {
+      attempts++
+      try {
+        const status = await connection.getSignatureStatus(signature)
+        if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') {
+          confirmed = true
+          console.log('Transaction confirmed after', attempts, 'attempts')
+          break
+        }
+      } catch (err) {
+        console.log('Polling attempt', attempts, 'failed:', err)
+      }
+
+      // Wait 1 second before next attempt
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+
+    if (!confirmed) {
+      console.warn('Transaction sent but confirmation timed out:', signature)
+    }
 
     console.log('Winner declared successfully:', signature)
 
     return NextResponse.json({
       success: true,
       signature,
+      confirmed,
       winner: {
         title: winnerBlog.account.title,
         owner: winnerBlog.account.owner.toBase58(),
@@ -102,6 +133,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
         timestamp: Math.floor(Date.now() / 1000),
       },
       { status: 500 },
