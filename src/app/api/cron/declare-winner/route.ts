@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const programId = getCounterProgramId('devnet')
     const program = getCounterProgram(provider, programId)
 
-    const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool')], programId)
+    const [weeklyPoolPda] = PublicKey.findProgramAddressSync([Buffer.from('weekly_pool_data')], programId)
     const poolData = await program.account.weeklyPool.fetch(weeklyPoolPda)
 
     const now = Math.floor(Date.now() / 1000)
