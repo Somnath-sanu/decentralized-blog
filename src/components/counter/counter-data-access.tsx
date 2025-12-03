@@ -3,7 +3,7 @@
 import { getCounterProgram, getCounterProgramId } from '@project/anchor'
 import { useConnection } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useCluster } from '../cluster/cluster-data-access'
 import { useAnchorProvider } from '../solana/solana-provider'
@@ -25,8 +25,9 @@ export function useCounterProgram() {
   const provider = useAnchorProvider()
   const programId = useMemo(() => getCounterProgramId('devnet'), [cluster])
   const program = useMemo(() => getCounterProgram(provider, programId), [provider, programId])
+  const queryClient = useQueryClient()
 
-  console.log("programId", programId.toBase58())
+  console.log('programId', programId.toBase58())
 
   const accounts = useQuery({
     queryKey: ['blogEntry', 'all', { cluster }],
@@ -108,6 +109,10 @@ export function useCounterProgram() {
     onSuccess(signatute) {
       transactionToast(signatute)
       accounts.refetch()
+      queryClient.invalidateQueries({ queryKey: ['blogEntry', 'all', { cluster }] })
+      queryClient.invalidateQueries({
+        queryKey: ['weekly-pool', { cluster }],
+      })
     },
     onError(error) {
       console.log(error)
